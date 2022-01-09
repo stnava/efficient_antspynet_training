@@ -5,6 +5,7 @@ import random
 import ants
 import antspynet
 import re
+from scipy.stats import rankdata
 
 from os.path import exists
 
@@ -16,6 +17,18 @@ import tensorflow as tf
 import tensorflow.keras as keras
 import tensorflow.keras.backend as K
 K.set_floatx("float32")
+
+
+# this recodes masked segmentation data to tensorflow format
+def ytotf( y, n ):
+    yr=y.astype(int)
+    yr = rankdata( yr, method='max' )
+    yr = yr.reshape( y.shape )
+    ct = 0
+    for u in np.unique( yr ):
+        yr[ yr == u ]=ct
+        ct=ct+1
+    return tf.one_hot( yr, n )
 
 def tfsubset( x, indices ):
     with tf.device('/CPU:0'):
@@ -48,8 +61,7 @@ def batch_generator( verbose=False ):
                     print(i)
                 x = np.load(t1_fns[i])
                 y = np.load(seg_fns[i])
-                y = tf.one_hot( y, nLabels )
-#                y = tfsubset( tf.one_hot( y, nLabels ), group_labels )
+                y = ytotf( y, nLabels )
                 allexist=True
         y2 = y[:,:,:,:,1] + y[:,:,:,:,2] + y[:,:,:,:,3] + y[:,:,:,:,4] + y[:,:,:,:,5] + y[:,:,:,:,6] + y[:,:,:,:,7] + y[:,:,:,:,8]
         return x, [y, y2]
@@ -128,11 +140,12 @@ num_epochs = 20000
 optimizerE = tf.keras.optimizers.Adam(1.e-4)
 batchsize = 4
 
+
 # load the testing data
 with tf.device('/CPU:0'):
     testX = np.load( "/raid/data_BA/cit168training/numpySNSegRankTest/TRT_mgkfuaqy_Ximages.npy" )
     testY = np.load( "/raid/data_BA/cit168training/numpySNSegRankTest/TRT_mgkfuaqy_Y.npy" )
-    testY = tf.one_hot( testY, nLabels )
+    testY = ytotf( testY, nLabels )
 
 for epoch in range(epoch, num_epochs):
     if epoch == 1 or epoch % int(np.round(64/batchsize)) == 0:
