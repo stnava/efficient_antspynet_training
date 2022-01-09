@@ -19,6 +19,14 @@ import tensorflow.keras.backend as K
 K.set_floatx("float32")
 import numpy as np
 
+istest=False
+
+def recode_labels( x, old_labels, new_labels ):
+    xnew = x * 0.0
+    for n in range(len(old_labels)):
+        xnew[ x == old_labels[n] ] = new_labels[n]
+    return xnew
+
 def special_crop( x, pt, domainer ):
         pti = np.round( ants.transform_physical_point_to_index( x, pt ) )
         xdim = x.shape
@@ -65,18 +73,33 @@ def batch_generator(
     Xcc = np.zeros( (batch_size, *(image_size), 3) )
     Y = np.zeros( (batch_size, *(image_size) ) )
     Ypr = np.zeros( (batch_size, *(image_size) ) )
-    zz=pd.read_csv( pt_fns[0] )
-    npts = zz.shape[0]
-    Ypts = np.zeros( ( batch_size,  npts, 3 ) )
     batch_count = 0
     print("BeginBatch")
     while batch_count < batch_size:
+        reflect_it = random.choice([True,False])
         i = random.sample(list(range(len(image_filenames))), 1)[0]
         t1 = ants.image_read(image_filenames[i])
-        zz=pd.read_csv( pt_fns[i] )
         mypr = ants.image_read( pr_fns[i] )
+        mypr = ants.mask_image( mypr, mypr, group_labels_in, binarize=False)
         seg = ants.image_read( segmentation_filenames[i] )
         seg = ants.mask_image( seg, seg, group_labels_in, binarize=False)
+        if reflect_it:
+            print("Reflect")
+            reflectx=ants.reflect_image( eximg, axis=0, tx='Translation' )
+            reflection_matrix=reflectx['fwdtransforms'][0]
+            mypr = ants.apply_transforms( mypr, mypr, reflection_matrix, interpolator='nearestNeighbor' )
+            seg = ants.apply_transforms( seg, seg, reflection_matrix, interpolator='nearestNeighbor' )
+            mypr = recode_labels( mypr, group_labels_target, reflection_labels )
+            seg = recode_labels( seg, group_labels_target, reflection_labels )
+            t1 = ants.apply_transforms( t1, t1, reflection_matrix, interpolator='linear' )
+        centroids = ants.label_geometry_measures(seg)
+        zz = pd.DataFrame({"Label":centroids['Label'],
+                "x":centroids['WeightedCentroid_x'],
+                "y":centroids['WeightedCentroid_y'],
+                "z":centroids['WeightedCentroid_z']} )
+        if batch_count == 0:
+            npts = zz.shape[0]
+            Ypts = np.zeros( ( batch_size,  npts, 3 ) )
         comMask = ants.mask_image( mypr, mypr, pt_labels, binarize=True )
         com = ants.get_center_of_mass( comMask )
         t1=special_crop( t1, com, image_size )
@@ -99,14 +122,15 @@ def batch_generator(
     return X, Xcc, Y, Ypts, Ypr
 
 data_directory = "/mnt/cluster/data/anatomicalLabels/Mindboggle101_volumes/simulated_whole_brain/"
-# data_directory = "/tmp/simulated_whole_brain/"
+if istest:
+    data_directory = "/tmp/simulated_whole_brain/"
 exfn = glob.glob( data_directory + "*img*sim_0.nii.gz" )[0]
 eximg = ants.image_read( exfn )
 group_labels_target = [0,7,8,9,23,24,25,33,34]
+reflection_labels = [0,23,24,25,7,8,9,34,33]
 pt_labels = [7,9,23,25]
 
 crop_size = [96,96,64]
-image_size = list(eximg.shape)
 
 print("Loading brain data.")
 
@@ -130,29 +154,34 @@ randstring = randword( 8 )
 outpre = "/mnt/cluster/data/anatomicalLabels/Mindboggle101_volumes/numpySNSegRank/MBSN_" + randstring
 print( outpre )
 
-seg = ants.image_read( seg_fns[0] )
 ###
 #
 # Set up the training generator
 #
+###
 
 batch_size = 64
+if istest:
+    batch_size = 4
+
 generator = batch_generator( t1_fns,
         seg_fns,
         image_size=crop_size,
         batch_size = batch_size,
         group_labels_in=group_labels_target )
 
-if False:
+if istest:
     for k in range(batch_size):
+        print(k)
         t0= ants.from_numpy( generator[0][k,:,:,:,0] )
         t1= ants.from_numpy( generator[2][k,:,:,:] )
         t0=ants.copy_image_info( eximg,t0)
         t1=ants.copy_image_info( eximg,t1)
         ants.plot(t0,t1,axis=2)
 
-np.save( outpre + "_Ximages.npy", generator[0] )
-np.save( outpre + "_Xcc.npy", generator[1] )
-np.save( outpre + "_Y.npy", generator[2] )
-np.save( outpre + "_Ypts.npy", generator[3] )
-np.save( outpre + "_Xprior.npy", generator[4])
+if not istest:
+    np.save( outpre + "_Ximages.npy", generator[0] )
+    np.save( outpre + "_Xcc.npy", generator[1] )
+    np.save( outpre + "_Y.npy", generator[2] )
+    np.save( outpre + "_Ypts.npy", generator[3] )
+    np.save( outpre + "_Xprior.npy", generator[4])
