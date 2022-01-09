@@ -130,8 +130,8 @@ batchsize = 4
 
 # load the testing data
 with tf.device('/CPU:0'):
-    testX = np.load( "/raid/data_BA/cit168training/numpy_test/TR_mynbiqpm_Ximages.npy" )
-    testY = np.load( "/raid/data_BA/cit168training/numpy_test/TR_mynbiqpm_Y.npy" )
+    testX = np.load( "/raid/data_BA/cit168training/numpySNSegRankTest/TRT_mgkfuaqy_Ximages.npy" )
+    testY = np.load( "/raid/data_BA/cit168training/numpySNSegRankTest/TRT_mgkfuaqy_Y.npy" )
     testY = tf.one_hot( testY, nLabels )
 
 for epoch in range(epoch, num_epochs):
