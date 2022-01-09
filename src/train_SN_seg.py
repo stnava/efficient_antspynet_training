@@ -66,9 +66,9 @@ def batch_generator( verbose=False ):
         y2 = y[:,:,:,:,1] + y[:,:,:,:,2] + y[:,:,:,:,3] + y[:,:,:,:,4] + y[:,:,:,:,5] + y[:,:,:,:,6] + y[:,:,:,:,7] + y[:,:,:,:,8]
         return x, [y, y2]
 
-data_directory = "/Users/stnava/Downloads/temp/testtrain/numpySNSegRank/"
+data_directory = "/Users/stnava/Downloads/temp/testtrain/numpySNSegRankGood/"
 if not os.path.isdir( data_directory ):
-    data_directory = "/raid/data_BA/cit168training/numpySNSegRank/"
+    data_directory = "/raid/data_BA/cit168training/numpySNSegRankGood/"
 
 # clearly, this should match the training data written to disk
 group_labels = [0,7,8,9,23,24,25,33,34]
@@ -143,8 +143,8 @@ batchsize = 4
 
 # load the testing data
 with tf.device('/CPU:0'):
-    testX = np.load( "/raid/data_BA/cit168training/numpySNSegRankTest/TRT_mgkfuaqy_Ximages.npy" )
-    testY = np.load( "/raid/data_BA/cit168training/numpySNSegRankTest/TRT_mgkfuaqy_Y.npy" )
+    testX = np.load( "/raid/data_BA/cit168training/numpySNSegRankTestGood/TRT_mgkfuaqy_Ximages.npy" )
+    testY = np.load( "/raid/data_BA/cit168training/numpySNSegRankTestGood/TRT_mgkfuaqy_Y.npy" )
     testY = ytotf( testY, nLabels )
 
 for epoch in range(epoch, num_epochs):
