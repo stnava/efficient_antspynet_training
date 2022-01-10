@@ -66,7 +66,7 @@ nsim = 64
 
 print("simulate")
 uu = antspynet.randomly_transform_image_data( refimg, ilist,
-    number_of_simulations = nsim, sd_affine=0.01,
+    number_of_simulations = nsim, sd_affine=0.005,
     transform_type = "affineAndDeformation" )
 print("simulate done")
 

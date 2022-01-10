@@ -119,7 +119,7 @@ group_labels_target = [0,1,2,3,4,5,6,7,8]
 reflection_labels =   [0,2,1,6,7,8,3,4,5]
 pt_labels = [1,2,3,4,5,6,7,8]
 
-crop_size = [128,64,64]
+crop_size = [144,96,64]
 
 print("Loading brain data.")
 
@@ -161,6 +161,8 @@ if istest:
         t1= ants.from_numpy( generator[1][k,:,:,:] )
         t0=ants.copy_image_info( eximg,t0)
         t1=ants.copy_image_info( eximg,t1)
+        ants.image_write(t0, '/tmp/temp.nii.gz')
+        ants.image_write(t1, '/tmp/temps.nii.gz')
         ants.plot(t0,t1,axis=2)
 
 if not istest:
