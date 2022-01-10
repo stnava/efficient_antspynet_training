@@ -86,9 +86,9 @@ for k in range( nsim ):
     # ants.plot( subjectsim, subjectsimseg, nslices=21, ncol=7, axis=1, crop=True )
     ants.image_write( subjectsimseg, outspre + "_sim_" + str(k) + ".nii.gz"  )
     ants.image_write( subjectsim, outipre + "_sim_" + str(k) + ".nii.gz"  )
-    ants.image_write( priorsim, outppre + "_sim_" + str(k) + ".nii.gz"  )
+    # ants.image_write( priorsim, outppre + "_sim_" + str(k) + ".nii.gz"  )
     print( outspre + "_sim_" + str(k) + ".nii.gz" )
     print( outipre + "_sim_" + str(k) + ".nii.gz"  )
-    print( outppre + "_sim_" + str(k) + ".nii.gz"  )
+    # print( outppre + "_sim_" + str(k) + ".nii.gz"  )
 
 print("done")
