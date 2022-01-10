@@ -117,9 +117,9 @@ exfn = glob.glob( data_directory + "*img*sim_0.nii.gz" )[0]
 eximg = ants.image_read( exfn )
 group_labels_target = [0,1,2,3,4,5,6,7,8]
 reflection_labels =   [0,2,1,6,7,8,3,4,5]
-pt_labels = group_labels_target
+pt_labels = [1,2,3,4,5,6]
 
-crop_size = [128,128,96]
+crop_size = [128,64,64]
 
 print("Loading brain data.")
 
