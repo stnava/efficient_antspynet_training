@@ -19,7 +19,7 @@ import tensorflow.keras.backend as K
 K.set_floatx("float32")
 import numpy as np
 
-istest=True
+istest=False
 
 def recode_labels( x, old_labels, new_labels ):
     xnew = x * 0.0
