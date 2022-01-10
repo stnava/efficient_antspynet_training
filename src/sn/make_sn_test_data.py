@@ -49,18 +49,21 @@ refimgsmall = ants.resample_image( refimg, [2.0,2.0,2.0] )
 
 # generate the data
 
-def preprocess( imgfn ):
+def preprocess( imgfn, bxt=False ):
     img = ants.image_read( imgfn )
-    imgbxt = antspyt1w.brain_extraction( img, method='v1' )
-    img = antspyt1w.preprocess_intensity( img, imgbxt, intensity_truncation_quantiles=[0.000001, 0.999999 ] )
+    if bxt:
+        imgbxt = antspyt1w.brain_extraction( img, method='v1' )
+        img = antspyt1w.preprocess_intensity( img, imgbxt, intensity_truncation_quantiles=[0.000001, 0.999999 ] )
     imgr = ants.rank_intensity( img )
+    print("BeginReg")
     reg = ants.registration( refimg, imgr, 'SyN',
         reg_iterations = [200,200,100,20,5],
         verbose=False )
+    print("EndReg")
     imgraff = ants.apply_transforms( refimg, imgr, reg['fwdtransforms'][1], interpolator='linear' )
     imgseg = ants.apply_transforms( refimg, refimgseg, reg['invtransforms'][1], interpolator='nearestNeighbor' )
     binseg = ants.mask_image( imgseg, imgseg, pt_labels, binarize=True )
-    imgseg = ants.mask_image( imgseg, imgseg, group_labels_target )
+    imgseg = ants.mask_image( imgseg, imgseg, group_labels_target, binarize=False  )
     com = ants.get_center_of_mass( binseg )
     return {
         "img": imgraff,

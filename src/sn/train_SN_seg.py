@@ -97,7 +97,7 @@ unet1 = antspynet.create_unet_model_3d(
     number_of_filters=(32, 64, 96, 128, 256),
     convolution_kernel_size=(3, 3, 3),
     deconvolution_kernel_size=(2, 2, 2),
-    dropout_rate=0.2,
+    dropout_rate=0.0,
     weight_decay=0,
     additional_options = "nnUnetActivationStyle")
 
@@ -137,7 +137,7 @@ mydf = None
 
 epoch = 1
 num_epochs = 20000
-optimizerE = tf.keras.optimizers.Adam(1.e-4)
+optimizerE = tf.keras.optimizers.Adam(5.e-5)
 batchsize = 4
 
 
@@ -159,25 +159,13 @@ for epoch in range(epoch, num_epochs):
           mloss = dice_loss( tf.cast(Xtr2[0],'float32'), preds[0] ) * 1.0
           binloss = binary_dice_loss(tf.cast(Xtr2[1],'float32'), tf.squeeze(preds[1]))
           cceloss = tf.reduce_sum( weighted_loss( tf.cast(Xtr2[0],'float32'), preds[0]  ) ) * 1e-4
-          loss = mloss + binloss + cceloss
+          loss = mloss + binloss*1.5 + cceloss*0.5
           unet_gradients = tape.gradient(loss, unet_model.trainable_variables)
     optimizerE.apply_gradients(  zip( unet_gradients, unet_model.trainable_variables ) )
-    # report per label dice scores
-    # for j in range(1,9):
-    #    temp = tf.cast(Xtr2[0][:,:,:,:,j],'float32')
-    #    print( binary_dice_loss( temp, preds[0][:,:,:,:,j] ) )
     testloss=tf.cast( np.math.inf, 'float32')
     if epoch == 1 or epoch % int(20) == 0:
         preds = unet_model.predict( testX, batch_size=batchsize )
         with tf.device('/CPU:0'):
-            predput = ants.from_numpy(preds[0][0,:,:,:,1])
-            predcaud = ants.from_numpy(preds[0][0,:,:,:,2])
-            truecaud = ants.from_numpy(testY.numpy()[0,:,:,:,2])
-            predput[ predput < 0.1 ] = 0
-            predcaud[ predcaud < 0.1 ] = 0
-            #ants.plot( ants.from_numpy( testX.numpy()[0,:,:,:,0 ]), predput, axis=2 )
-            #ants.plot( ants.from_numpy( testX.numpy()[0,:,:,:,0 ]), predcaud, axis=2 )
-            #ants.plot( ants.from_numpy( testX.numpy()[0,:,:,:,0 ]), truecaud, axis=2 )
             print("Testing")
             testloss = tf.cast( 0.0, 'float32' )
             for j in range(1,9):
