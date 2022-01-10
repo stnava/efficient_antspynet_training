@@ -49,16 +49,15 @@ refimgsmall = ants.resample_image( refimg, [2.0,2.0,2.0] )
 
 # generate the data
 
-def preprocess( imgfn, bxt=False ):
+def preprocess( imgfn, segfn, bxt=False ):
     img = ants.image_read( imgfn )
+    seg = ants.image_read( segfn )
     if bxt:
         imgbxt = antspyt1w.brain_extraction( img, method='v1' )
         img = antspyt1w.preprocess_intensity( img, imgbxt, intensity_truncation_quantiles=[0.000001, 0.999999 ] )
     imgr = ants.rank_intensity( img )
     print("BeginReg")
-    reg = ants.registration( refimg, imgr, 'SyN',
-        reg_iterations = [200,200,100,20,5],
-        verbose=False )
+    reg = ants.registration( refimgsmall, imgr, 'SyN', verbose=False )
     print("EndReg")
     imgraff = ants.apply_transforms( refimg, imgr, reg['fwdtransforms'][1], interpolator='linear' )
     imgseg = ants.apply_transforms( refimg, refimgseg, reg['invtransforms'][1], interpolator='nearestNeighbor' )
@@ -69,57 +68,53 @@ def preprocess( imgfn, bxt=False ):
         "img": imgraff,
         "seg": imgseg,
         "imgc": special_crop( imgraff, com, crop_size ),
-        "segc": special_crop( imgseg, com, crop_size )
+        "segc": special_crop( seg, com, crop_size )
         }
 
 
 libdir = "/mnt/cluster/data/anatomicalLabels/basalforebrainlibrary/"
-dtifns = glob.glob( libdir + "images_test/*SRnocsf.nii.gz" )
-dtifns.sort()
-segfns = dtifns.copy()
-for x in range( len( dtifns )):
-    segfns[x] = re.sub( "SRnocsf.nii.gz", "SRnbm3CH13.nii.gz" , dtifns[x] )
+t1_fns = glob.glob( libdir + "images_test/*SRnocsf.nii.gz" )
+t1_fns.sort()
+segfns = t1_fns.copy()
+for x in range( len( t1_fns )):
+    segfns[x] = re.sub( "SRnocsf.nii.gz", "SRnbm3CH13.nii.gz" , t1_fns[x] )
     segfns[x] = re.sub( "images_test", "segmentations" , segfns[x] )
 
-exfn = glob.glob( data_directory + srchstring)[0]
+exfn = t1_fns[0]
 eximg = ants.image_read( exfn )
-group_labels_target = [0,7,8,9,23,24,25,33,34]
-pt_labels = [7,9,23,25]
 
-crop_size = [96,96,64]
-image_size = list(eximg.shape)
-print( eximg )
+group_labels_target = [0,1,2,3,4,5,6,7,8]
+reflection_labels =   [0,2,1,6,7,8,3,4,5]
+pt_labels = [1,2,3,4,5,6,7,8]
 
-# temp=preprocess(exfn)
+crop_size = [144,96,64]
 
 print("Loading brain data.")
-
-t1_fns = glob.glob( data_directory + srchstring )
 print("Total training image files: ", len(t1_fns))
+
+# temp=preprocess(t1_fns[0],segfns[0])
 
 # convert to numpy files
 def batch_generator(
     image_filenames,
+    seg_filenames,
     image_size,
-    batch_size=64,
+    batch_size=48,
     ):
     X = np.zeros( (batch_size, *(image_size), 1) )
     Y = np.zeros( (batch_size, *(image_size) ) )
     batch_count = 0
     lo=0
-    if len(image_filenames) > 20:
-        lo=20
     print("BeginBatch " + str(lo) )
     while batch_count < batch_size:
         i = random.sample(list(range(lo,len(image_filenames))), 1)[0]
         print( str(i) + " " + image_filenames[i] )
-        locdata = preprocess( image_filenames[i] )
+        locdata = preprocess( image_filenames[i], seg_filenames[i] )
         X[batch_count,:,:,:,0] = locdata['imgc'].numpy()
         Y[batch_count,:,:,:] = locdata['segc'].numpy()
         batch_count = batch_count + 1
         if batch_count >= batch_size:
                 break
-
     return X, Y
 
 import random, string
@@ -127,13 +122,15 @@ def randword(length):
    letters = string.ascii_lowercase
    return ''.join(random.choice(letters) for i in range(length))
 randstring = randword( 8 )
-outpre = "/mnt/cluster/data/anatomicalLabels/Mindboggle101_volumes/numpySNSegRankTest/TRT_" + randstring
+outpre = libdir + "numpystufftest/ADNITEST_" + randstring
 print( outpre )
 
-batch_size = 32
-generator = batch_generator( t1_fns,
-        image_size=crop_size,
-        batch_size = batch_size )
+batch_size = 48
+generator = batch_generator(
+    t1_fns,
+    segfns,
+    image_size=crop_size,
+    batch_size = batch_size )
 
 if False:
     for k in range(batch_size):
