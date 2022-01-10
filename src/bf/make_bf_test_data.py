@@ -44,7 +44,7 @@ def special_crop( x, pt, domainer ):
 refimg = ants.image_read( antspyt1w.get_data( "CIT168_T1w_700um_pad", target_extension='.nii.gz' ))
 refimg = ants.rank_intensity( refimg )
 refimg = ants.resample_image( refimg, [0.5,0.5,0.5] )
-refimgseg = ants.image_read( antspyt1w.get_data( "det_atlas_25_pad_LR", target_extension='.nii.gz' ))
+refimgseg = ants.image_read( antspyt1w.get_data( "CIT168_T1w_700um_pad_bf", target_extension='.nii.gz' ))
 refimgsmall = ants.resample_image( refimg, [2.0,2.0,2.0] )
 
 # generate the data
@@ -72,10 +72,15 @@ def preprocess( imgfn, bxt=False ):
         "segc": special_crop( imgseg, com, crop_size )
         }
 
-data_directory = "/mnt/cluster/data/anatomicalLabels/Mindboggle101_volumes/simulated_whole_brain/"
-data_directory = "/Users/stnava/Downloads/temp/traveling_subjects/SRPBTravel/"
-data_directory = "/mnt/cluster/data/SRPBS_multidisorder_MRI/traveling_subjects_repro_study/"
-srchstring = "sub-*/T1wH/sub-*v1SR.nii.gz"
+
+libdir = "/mnt/cluster/data/anatomicalLabels/basalforebrainlibrary/"
+dtifns = glob.glob( libdir + "images_test/*SRnocsf.nii.gz" )
+dtifns.sort()
+segfns = dtifns.copy()
+for x in range( len( dtifns )):
+    segfns[x] = re.sub( "SRnocsf.nii.gz", "SRnbm3CH13.nii.gz" , dtifns[x] )
+    segfns[x] = re.sub( "images_test", "segmentations" , segfns[x] )
+
 exfn = glob.glob( data_directory + srchstring)[0]
 eximg = ants.image_read( exfn )
 group_labels_target = [0,7,8,9,23,24,25,33,34]
