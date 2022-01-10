@@ -1,6 +1,6 @@
-# efficient_sn_training_antspynet
+# efficient antspynet training
 
-efficient antspynet training with sleek augmentation strategies based on a single template
+efficient antspynet training with sleek augmentation strategies based on single or multiple template(s)
 
 for reproducible and efficient training of parcellating segmentation models
 
@@ -18,7 +18,7 @@ features:
 
 * parcellating unet models
 
-the procedure is as follows:
+the procedure is as follows ( using `src/sn` as example ):
 
 * augment the `m` original images using registration, transform simulation and concatenation of these maps to generate `m*n` output images `t1sim_whole_brain.py` and the `docs`
 
