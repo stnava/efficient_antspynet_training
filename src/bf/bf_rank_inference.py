@@ -112,7 +112,7 @@ unet_model = tf.keras.models.Model(
 unet_model.load_weights( newfn )
 
 ####################################################
-returndef = True
+returndef = False
 imgprepro = preprocess( img, returndef = returndef )
 ####################################################
 physspaceBF = imgprepro['imgc']

@@ -140,8 +140,8 @@ batchsize = 4
 
 # load the testing data
 with tf.device('/CPU:0'):
-    testX = np.load( "/raid/data_BA/basalforebrainlibrary/numpystufftest/FIXME.npy" )
-    testY = np.load( "/raid/data_BA/basalforebrainlibrary/numpystufftest/FIXME.npy" )
+    testX = np.load( "/raid/data_BA/basalforebrainlibrary/numpystufftest/ADNITEST_mgkfuaqy_Ximages.npy" )
+    testY = np.load( "/raid/data_BA/basalforebrainlibrary/numpystufftest/ADNITEST_mgkfuaqy_Y.npy" )
     testY = ytotf( testY, nLabels )
 
 for epoch in range(epoch, num_epochs):
