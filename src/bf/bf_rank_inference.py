@@ -6,7 +6,7 @@ import tensorflow as tf
 img=ants.image_read("PPMI-3810-20110913-MRI_T1-I269587-antspyt1w-V0-brain_n4_dnz-SR.nii.gz")
 # img=ants.image_read("PPMI-58027-20210420-T1wHierarchical-I1495795-SR.nii.gz")
 # img=ants.image_read("PPMI-107099-20210914-T1wHierarchical-I1498901-SR.nii.gz")
-# img=ants.image_read("sub-021_T1wH_v1SR.nii.gz")
+img=ants.image_read("sub-025_T1wH_v1SR.nii.gz")
 
 newfn="deep_nbm_rank.h5"
 print( newfn )
