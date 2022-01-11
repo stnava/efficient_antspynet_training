@@ -19,6 +19,7 @@ import tensorflow.keras.backend as K
 K.set_floatx("float32")
 
 
+libdir = "/raid/data_BA/basalforebrainlibrary/"
 # this recodes masked segmentation data to tensorflow format
 def ytotf( y, n ):
     yr=y.astype(int)
@@ -66,7 +67,7 @@ def batch_generator( verbose=False ):
         y2 = y[:,:,:,:,1] + y[:,:,:,:,2] + y[:,:,:,:,3] + y[:,:,:,:,4] + y[:,:,:,:,5] + y[:,:,:,:,6] + y[:,:,:,:,7] + y[:,:,:,:,8]
         return x, [y, y2]
 
-data_directory = "/raid/data_BA/basalforebrainlibrary/numpystuff/"
+data_directory = libdir + "numpystuff/"
 
 # clearly, this should match the training data written to disk
 group_labels = [0,1,2,3,4,5,6,7,8]
@@ -140,8 +141,8 @@ batchsize = 4
 
 # load the testing data
 with tf.device('/CPU:0'):
-    testX = np.load( "/raid/data_BA/basalforebrainlibrary/numpystufftest/ADNITEST_mgkfuaqy_Ximages.npy" )
-    testY = np.load( "/raid/data_BA/basalforebrainlibrary/numpystufftest/ADNITEST_mgkfuaqy_Y.npy" )
+    testX = np.load( libdir + "/numpystufftest/ADNITEST_mgkfuaqy_Ximages.npy" )
+    testY = np.load( libdir + "/numpystufftest/ADNITEST_mgkfuaqy_Y.npy" )
     testY = ytotf( testY, nLabels )
 
 for epoch in range(epoch, num_epochs):
