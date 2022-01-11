@@ -66,12 +66,10 @@ def batch_generator( verbose=False ):
         y2 = y[:,:,:,:,1] + y[:,:,:,:,2] + y[:,:,:,:,3] + y[:,:,:,:,4] + y[:,:,:,:,5] + y[:,:,:,:,6] + y[:,:,:,:,7] + y[:,:,:,:,8]
         return x, [y, y2]
 
-data_directory = "/Users/stnava/Downloads/temp/testtrain/numpySNSegRankGood/"
-if not os.path.isdir( data_directory ):
-    data_directory = "/raid/data_BA/cit168training/numpySNSegRankGood/"
+data_directory = "/raid/data_BA/basalforebrainlibrary/numpystuff/"
 
 # clearly, this should match the training data written to disk
-group_labels = [0,7,8,9,23,24,25,33,34]
+group_labels = [0,1,2,3,4,5,6,7,8]
 nLabels = len( group_labels )
 number_of_classification_labels = len(group_labels)
 number_of_channels = 1
@@ -97,7 +95,7 @@ unet1 = antspynet.create_unet_model_3d(
     number_of_filters=(32, 64, 96, 128, 256),
     convolution_kernel_size=(3, 3, 3),
     deconvolution_kernel_size=(2, 2, 2),
-    dropout_rate=0.2,
+    dropout_rate=0.0,
     weight_decay=0,
     additional_options = "nnUnetActivationStyle")
 
@@ -115,7 +113,7 @@ weighted_loss = antspynet.weighted_categorical_crossentropy(weights=wts)
 dice_loss = antspynet.multilabel_dice_coefficient(dimensionality=3, smoothing_factor=1e-5)
 binary_dice_loss = antspynet.binary_dice_coefficient(smoothing_factor=1e-5)
 
-weights_filename = "deepCIT168_sn_rank.h5"
+weights_filename = "deep_nbm_rank.h5"
 csv_filename = re.sub("h5", "csv", weights_filename)
 
 if os.path.exists(weights_filename):
@@ -134,17 +132,16 @@ print("Total training image files: ", len(t1_fns))
 
 import pandas as pd
 mydf = None
-
 epoch = 1
 num_epochs = 20000
-optimizerE = tf.keras.optimizers.Adam(1.e-4)
+optimizerE = tf.keras.optimizers.Adam(5.e-5)
 batchsize = 4
 
 
 # load the testing data
 with tf.device('/CPU:0'):
-    testX = np.load( "/raid/data_BA/cit168training/numpySNSegRankTestGood/TRT_mgkfuaqy_Ximages.npy" )
-    testY = np.load( "/raid/data_BA/cit168training/numpySNSegRankTestGood/TRT_mgkfuaqy_Y.npy" )
+    testX = np.load( "/raid/data_BA/basalforebrainlibrary/numpystufftest/FIXME.npy" )
+    testY = np.load( "/raid/data_BA/basalforebrainlibrary/numpystufftest/FIXME.npy" )
     testY = ytotf( testY, nLabels )
 
 for epoch in range(epoch, num_epochs):
@@ -159,28 +156,16 @@ for epoch in range(epoch, num_epochs):
           mloss = dice_loss( tf.cast(Xtr2[0],'float32'), preds[0] ) * 1.0
           binloss = binary_dice_loss(tf.cast(Xtr2[1],'float32'), tf.squeeze(preds[1]))
           cceloss = tf.reduce_sum( weighted_loss( tf.cast(Xtr2[0],'float32'), preds[0]  ) ) * 1e-4
-          loss = mloss + binloss + cceloss
+          loss = mloss + binloss * 2.0 + cceloss * 0.5
           unet_gradients = tape.gradient(loss, unet_model.trainable_variables)
     optimizerE.apply_gradients(  zip( unet_gradients, unet_model.trainable_variables ) )
-    # report per label dice scores
-    # for j in range(1,9):
-    #    temp = tf.cast(Xtr2[0][:,:,:,:,j],'float32')
-    #    print( binary_dice_loss( temp, preds[0][:,:,:,:,j] ) )
     testloss=tf.cast( np.math.inf, 'float32')
     if epoch == 1 or epoch % int(20) == 0:
         preds = unet_model.predict( testX, batch_size=batchsize )
         with tf.device('/CPU:0'):
-            predput = ants.from_numpy(preds[0][0,:,:,:,1])
-            predcaud = ants.from_numpy(preds[0][0,:,:,:,2])
-            truecaud = ants.from_numpy(testY.numpy()[0,:,:,:,2])
-            predput[ predput < 0.1 ] = 0
-            predcaud[ predcaud < 0.1 ] = 0
-            #ants.plot( ants.from_numpy( testX.numpy()[0,:,:,:,0 ]), predput, axis=2 )
-            #ants.plot( ants.from_numpy( testX.numpy()[0,:,:,:,0 ]), predcaud, axis=2 )
-            #ants.plot( ants.from_numpy( testX.numpy()[0,:,:,:,0 ]), truecaud, axis=2 )
             print("Testing")
             testloss = tf.cast( 0.0, 'float32' )
-            for j in range(1,9):
+            for j in range(1,number_of_classification_labels):
                 temp = binary_dice_loss(
                     tf.cast(testY[:,:,:,:,j],'float32'), preds[0][:,:,:,:,j] )
                 print( temp )

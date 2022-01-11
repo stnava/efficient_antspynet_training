@@ -60,7 +60,7 @@ def preprocess( imgfn, segfn, bxt=False ):
     reg = ants.registration( refimgsmall, imgr, 'SyN', verbose=False )
     print("EndReg")
     imgraff = ants.apply_transforms( refimg, imgr, reg['fwdtransforms'][1], interpolator='linear' )
-    imgseg = ants.apply_transforms( refimg, refimgseg, reg['invtransforms'][1], interpolator='nearestNeighbor' )
+    imgseg = ants.apply_transforms( refimg, seg, reg['fwdtransforms'][1], interpolator='genericLabel' )
     binseg = ants.mask_image( imgseg, imgseg, pt_labels, binarize=True )
     imgseg = ants.mask_image( imgseg, imgseg, group_labels_target, binarize=False  )
     com = ants.get_center_of_mass( binseg )
@@ -68,7 +68,7 @@ def preprocess( imgfn, segfn, bxt=False ):
         "img": imgraff,
         "seg": imgseg,
         "imgc": special_crop( imgraff, com, crop_size ),
-        "segc": special_crop( seg, com, crop_size )
+        "segc": special_crop( imgseg, com, crop_size )
         }
 
 
@@ -86,7 +86,6 @@ eximg = ants.image_read( exfn )
 group_labels_target = [0,1,2,3,4,5,6,7,8]
 reflection_labels =   [0,2,1,6,7,8,3,4,5]
 pt_labels = [1,2,3,4,5,6,7,8]
-
 crop_size = [144,96,64]
 
 print("Loading brain data.")
@@ -108,7 +107,7 @@ def batch_generator(
     print("BeginBatch " + str(lo) )
     while batch_count < batch_size:
         i = random.sample(list(range(lo,len(image_filenames))), 1)[0]
-        print( str(i) + " " + image_filenames[i] )
+        print( "bct " + str(batch_count)+ " " + str(i) + " " + image_filenames[i] )
         locdata = preprocess( image_filenames[i], seg_filenames[i] )
         X[batch_count,:,:,:,0] = locdata['imgc'].numpy()
         Y[batch_count,:,:,:] = locdata['segc'].numpy()

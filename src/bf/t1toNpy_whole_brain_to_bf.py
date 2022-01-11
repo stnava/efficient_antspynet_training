@@ -106,7 +106,6 @@ def batch_generator(
         batch_count = batch_count + 1
         if batch_count >= batch_size:
                 break
-
     return X,  Y, Ypts
 
 libdir = '/mnt/cluster/data/anatomicalLabels/basalforebrainlibrary/'
@@ -167,5 +166,5 @@ if istest:
 
 if not istest:
     np.save( outpre + "_Ximages.npy", generator[0] )
-    np.save( outpre + "_Y.npy", generator[2] )
-    np.save( outpre + "_Ypts.npy", generator[3] )
+    np.save( outpre + "_Y.npy", generator[1] )
+    np.save( outpre + "_Ypts.npy", generator[2] )

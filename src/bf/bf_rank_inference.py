@@ -8,15 +8,20 @@ img=ants.image_read("PPMI-3810-20110913-MRI_T1-I269587-antspyt1w-V0-brain_n4_dnz
 # img=ants.image_read("PPMI-107099-20210914-T1wHierarchical-I1498901-SR.nii.gz")
 # img=ants.image_read("sub-021_T1wH_v1SR.nii.gz")
 
-newfn="deepCIT168_sn_rank.h5"
+newfn="deep_nbm_rank.h5"
 print( newfn )
 verbose=True
 
 refimg = ants.image_read( antspyt1w.get_data( "CIT168_T1w_700um_pad", target_extension='.nii.gz' ))
 refimg = ants.rank_intensity( refimg )
 refimg = ants.resample_image( refimg, [0.5,0.5,0.5] )
-refimgseg = ants.image_read( antspyt1w.get_data( "det_atlas_25_pad_LR", target_extension='.nii.gz' ))
+refimgseg = ants.image_read( antspyt1w.get_data( "CIT168_T1w_700um_pad_bf", target_extension='.nii.gz' ))
 refimgsmall = ants.resample_image( refimg, [2.0,2.0,2.0] )
+
+group_labels = [0,1,2,3,4,5,6,7,8]
+reflection_labels =   [0,2,1,6,7,8,3,4,5]
+pt_labels = [1,2,3,4,5,6,7,8]
+crop_size = [144,96,64]
 
 def special_crop( x, pt, domainer ):
         pti = np.round( ants.transform_physical_point_to_index( x, pt ) )
@@ -40,8 +45,6 @@ def special_crop( x, pt, domainer ):
         return ants.resample_image_to_target( x, mim )
 
 def preprocess( img, bxt=False, returndef=False ):
-    pt_labels = [7,9,23,25]
-    crop_size = [96,96,64]
     if bxt:
         imgbxt = antspyt1w.brain_extraction( img, method='v1' )
         img = antspyt1w.preprocess_intensity( img, imgbxt, intensity_truncation_quantiles=[0.000001, 0.999999 ] )
@@ -70,7 +73,6 @@ def preprocess( img, bxt=False, returndef=False ):
         }
 
 
-group_labels = [0,7,8,9,23,24,25,33,34]
 nLabels = len( group_labels )
 number_of_classification_labels = len(group_labels)
 number_of_channels = 1
@@ -113,8 +115,8 @@ unet_model.load_weights( newfn )
 returndef = True
 imgprepro = preprocess( img, returndef = returndef )
 ####################################################
-physspaceSN = imgprepro['imgc']
-tfarr1 = tf.cast( physspaceSN.numpy() ,'float32' )
+physspaceBF = imgprepro['imgc']
+tfarr1 = tf.cast( physspaceBF.numpy() ,'float32' )
 newshapeSN = list( tfarr1.shape )
 newshapeSN.insert(0,1)
 newshapeSN.insert(4,1)
@@ -123,16 +125,16 @@ snpred = unet_model.predict( tfarr1 )
 segpred = snpred[0]
 sigmoidpred = snpred[1]
 snpred1_image = ants.from_numpy( sigmoidpred[0,:,:,:,0] )
-snpred1_image = ants.copy_image_info( physspaceSN, snpred1_image )
+snpred1_image = ants.copy_image_info( physspaceBF, snpred1_image )
 bint = ants.threshold_image( snpred1_image, 0.5, 1.0 )
 probability_images = []
 for jj in range(number_of_classification_labels-1):
             temp = ants.from_numpy( segpred[0,:,:,:,jj+1] )
-            probability_images.append( ants.copy_image_info( physspaceSN, temp ) )
+            probability_images.append( ants.copy_image_info( physspaceBF, temp ) )
 image_matrix = ants.image_list_to_matrix(probability_images, bint)
 segmentation_matrix = (np.argmax(image_matrix, axis=0) + 1)
 segmentation_image = ants.matrix_to_images(np.expand_dims(segmentation_matrix, axis=0), bint)[0]
-ants.plot( physspaceSN, segmentation_image, axis=2 )
+ants.plot( physspaceBF, segmentation_image, axis=2 )
 relabeled_image = ants.image_clone(segmentation_image)
 for i in range(1,len(group_labels)):
             relabeled_image[segmentation_image==(i)] = group_labels[i]
@@ -143,6 +145,4 @@ if not returndef:
 else:
     relabeled_image = ants.apply_transforms( img, relabeled_image,
                     imgprepro['reg']['invtransforms'], interpolator='genericLabel' )
-ants.image_write(relabeled_image, '/tmp/temp_sn.nii.gz' )
-
-
+ants.image_write(relabeled_image, '/tmp/temp_bf.nii.gz' )
