@@ -7,7 +7,8 @@ from PIL import Image
 import pandas as pd
 import sys
 import re
-t1fns = glob.glob( "images/*_QCsim*.nii.gz" )
+t1fnstr = glob.glob( "images_train/*_QCsim*.nii.gz" )
+t1fnste = glob.glob( "images_test/*_QCsim*.nii.gz" )
 # now we can do the processing we need ....
 import ants
 import antspynet
@@ -35,13 +36,17 @@ def compute_spearmanr(y, y_pred):
 mdl = antspynet.create_resnet_model_3d( [None,None,None,nChannels],
     lowest_resolution = 32,
     number_of_classification_labels = 4,
-    cardinality = 32,
-    squeeze_and_excite = True )
-# mdl.summary()
+    cardinality = 1,
+    squeeze_and_excite = False )
+mdl.summary()
 
-refimg = ants.image_read( t1fns[0] )
+refimg = ants.image_read( t1fnstr[0] )
 
-def batch_generator( n = 8 ):
+def batch_generator( n = 8, train=True ):
+    if train:
+        t1fns=t1fnstr
+    else:
+        t1fns=t1fnste
     s = random.sample( range( 0, len(t1fns)), n )
     xshape = list( refimg.shape )
     xshape.append( 1 )
@@ -76,23 +81,24 @@ def batch_generator( n = 8 ):
 
 weights_filename='resnet_grader.h5'
 csv_filename=re.sub("h5","csv",weights_filename)
-optimizerE = tf.keras.optimizers.Adam(1.e-3)
+optimizerE = tf.keras.optimizers.Adam(1.e-5)
 batchsize = 32
 epoch=0
-num_epochs = np.round( len( t1fns ) * 5 / batchsize  ).astype(int)
+num_epochs = np.round( len( t1fnstr ) * 5 / batchsize  ).astype(int)
 mydf=None
 
 # load the testing data
 with tf.device('/CPU:0'):
-    temp=batch_generator( 32 )
+    temp=batch_generator( 128, train=False )
     testX = temp[0]
     testY = temp[1]
     testYnum = temp[2]
 
 scoreNums = np.zeros( 4 )
-scoreNums[3]=3
-scoreNums[2]=2
-scoreNums[1]=1
+scoreNums[3]=0
+scoreNums[2]=1
+scoreNums[1]=2
+scoreNums[0]=3
 scoreNums=scoreNums.reshape( [4,1] )
 
 corrwt = 1.0
