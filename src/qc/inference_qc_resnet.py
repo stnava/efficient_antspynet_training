@@ -7,6 +7,7 @@ from PIL import Image
 import pandas as pd
 import sys
 import re
+import statistics
 # now we can do the processing we need ....
 import ants
 import antspynet
@@ -28,6 +29,9 @@ import antspyt1w
 import numpy as np
 import random
 nChannels=1
+
+def most_frequent(List):
+    return max(set(List), key = List.count)
 
 weights_filename='resnet_grader.h5'
 mdl = antspynet.create_resnet_model_3d( [None,None,None,nChannels],
@@ -54,7 +58,6 @@ t1fn='/Users/stnava/.antspyt1w/ADNI-073_S_4300-20140107-T1w-000.nii.gz'
 t1fn='/Users/stnava/.antspyt1w/28364-00000000-T1w-00.nii.gz'
 t1fn='sub-056_T1wH_v1SR.nii.gz'; dobxt=False
 t1fn='Mindboggle_MMRR-21-5_T1wSRHierarchical_SR.nii.gz'
-t1fn='sub-094-SRHIERbrain_n4_dnz.nii.gz'
 t1fn='/Users/stnava/.antspyt1w/28405-00000000-T1w-02.nii.gz'; dobxt=True
 t1fn='/Users/stnava/.antspyt1w/28497-00000000-T1w-04.nii.gz'
 t1fn='/Users/stnava/.antspyt1w/sub-094_T1w_n3.nii.gz'
@@ -65,6 +68,8 @@ t1fn='/Users/stnava/.antspyt1w/28575-00000000-T1w-07.nii.gz'
 t1fn='Landman_1399_20110819_366886505_301_WIP_T1_3D_TFE_iso0_70_SENSE_T1_3D_TFE_iso0_70.nii.gz'; dobxt=True
 t1fn='/Users/stnava/Downloads/eximg.nii.gz' ; dobxt=False
 t1fn='PPMI-107099-20210914-T1wHierarchical-I1498901-SR.nii.gz'; dobxt=False
+t1fn='sub-094-SRHIERbrain_n4_dnz.nii.gz'
+t1fn='PPMI-3810-20110913-MRI_T1-I269587-antspyt1w-V0-brain_n4_dnz-SR.nii.gz'
 x=ants.image_read( t1fn )
 print( t1fn )
 if dobxt:
@@ -99,6 +104,22 @@ fwdaffgd = ants.read_transform( reg['fwdtransforms'][0])
 invaffgd = ants.invert_ants_transform( fwdaffgd )
 meanpred = 0.0
 minpred = np.math.inf
+
+def get_grade( score, probs ):
+    grade='f'
+    if score >= 2.25:
+        grade='a'
+    elif score >= 1.5:
+        grade='b'
+    elif score >= 0.75:
+        grade='c'
+    probgradeindex = np.argmax( probs )
+    probgrade = ['a','b','c','f'][probgradeindex]
+    return [grade, probgrade]
+
+meanpred=0.0
+gradelistNum = []
+gradelistProb = []
 for k in range( nsim ):
     print( "k: " + str(k) )
     simtx = uu['simulated_transforms'][k]
@@ -111,31 +132,20 @@ for k in range( nsim ):
     xarr = np.reshape(  xarr, newshape  )
     preds = mdl.predict( xarr )
     predsnum = tf.matmul(  preds, scoreNums )
+    locgrades = get_grade( predsnum, preds )
+    print(  locgrades )
     if float(predsnum.numpy()) < minpred:
         minpred = float(predsnum.numpy())
     meanpred = meanpred + predsnum/nsim
-    print( preds )
-    print( predsnum )
+    gradelistNum.append( locgrades[0] )
+    gradelistProb.append( locgrades[1] )
 
-grade='f'
-meanpred=float(meanpred )
-if meanpred >= 2.25:
-    grade='a'
-elif meanpred >= 1.5:
-    grade='b'
-elif meanpred >= 0.75:
-    grade='c'
+print( most_frequent(gradelistNum) + " & " + most_frequent(gradelistProb))
 
-print( grade )
+mydf = pd.DataFrame( {
+    "Num": gradelistNum,
+    "Prob": gradelistProb
+})
 
-
-# quantile-based grading
-grademin='f'
-if minpred >= 2.25:
-    grademin='a'
-elif minpred >= 1.5:
-    grademin='b'
-elif minpred >= 0.75:
-    grademin='c'
-
-print( grademin + " " + str( float(meanpred ) ) )
+print( mydf.Num.value_counts() )
+print( mydf.Prob.value_counts() )
