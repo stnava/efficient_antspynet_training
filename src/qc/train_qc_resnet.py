@@ -78,9 +78,11 @@ def batch_generator( n = 8, train=True ):
 # temp=batch_generator()
 
 
-
 weights_filename='resnet_grader.h5'
+if exists( weights_filename ):
+    mdl.load_weights( weights_filename )
 csv_filename=re.sub("h5","csv",weights_filename)
+
 optimizerE = tf.keras.optimizers.Adam(1.e-5)
 batchsize = 32
 epoch=0

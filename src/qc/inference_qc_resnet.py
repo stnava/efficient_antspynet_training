@@ -48,11 +48,16 @@ scoreNums=scoreNums.reshape( [4,1] )
 
 t1fn='t1weighted_strides14_SR.nii.gz'
 t1fn='/Users/stnava/data/ADNI_studies/basalforebrainlibrary/images_train/002_S_0729-20060802-T1w-000-SRnocsf.nii.gz'
-dobxt=False
+t1fn='/Users/stnava/.antspyt1w/28523-00000000-T1w-05.nii.gz'; dobxt=True
+t1fn='/Users/stnava/.antspyt1w/ADNI-024_S_1393-20080407-T1w-000.nii.gz'
+# t1fn='/Users/stnava/.antspyt1w/ADNI-073_S_4300-20140107-T1w-000.nii.gz'
+# t1fn='/Users/stnava/Downloads/eximg.nii.gz' ; dobxt=False
 x=ants.image_read( t1fn )
+print( t1fn )
 if dobxt:
-    bxt=antspyt1w.brain_extraction( x )
+    bxt=antspyt1w.brain_extraction( ants.rank_intensity(  x ) )
     t1 = ants.iMath( x * bxt,  "Normalize" )
+    ants.plot( t1, nslices=21, ncol=7, crop=True )
 else:
     t1 = ants.iMath( x,  "Normalize" )
 t1 = ants.rank_intensity( t1, get_mask=True )
