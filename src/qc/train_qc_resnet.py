@@ -86,7 +86,7 @@ csv_filename=re.sub("h5","csv",weights_filename)
 optimizerE = tf.keras.optimizers.Adam(1.e-5)
 batchsize = 32
 epoch=0
-num_epochs = np.round( len( t1fnstr ) * 5 / batchsize  ).astype(int)
+num_epochs = np.round( len( t1fnstr ) * 10 / batchsize  ).astype(int)
 mydf=None
 
 # load the testing data
