@@ -70,6 +70,14 @@ t1fn='/Users/stnava/Downloads/eximg.nii.gz' ; dobxt=False
 t1fn='PPMI-107099-20210914-T1wHierarchical-I1498901-SR.nii.gz'; dobxt=False
 t1fn='sub-094-SRHIERbrain_n4_dnz.nii.gz'
 t1fn='PPMI-3810-20110913-MRI_T1-I269587-antspyt1w-V0-brain_n4_dnz-SR.nii.gz'
+t1fn='/Users/stnava/code/code_old/adu/ADNI/reviewData/SRPro/20070820/T1w/000/deep_dkt/ADNI-016_S_0769-20070820-T1w-000-deep_dkt-deep_dkt_Labels-1006-1007-1015-1016_SR.nii.gz'
+t1fn='/Users/stnava/Downloads/temp/basal_forebrain_trt/evaldf/005_S_0929/20061002/T1w/001/antspyt1wsr/V0/ADNI-005_S_0929-20061002-T1w-001-antspyt1wsr-V0-brain_n4_dnz_SR.nii.gz'
+
+t1fn='/Users/stnava/.antspyt1w/28575-00000000-T1w-07.nii.gz'
+head=ants.image_read( t1fn )
+insp=antspyt1w.inspect_raw_t1( head, output_prefix='/tmp/XXX' )
+derka
+
 x=ants.image_read( t1fn )
 print( t1fn )
 if dobxt:
@@ -80,72 +88,5 @@ if dobxt:
 else:
     t1 = ants.iMath( x,  "Normalize" )
     bxt = ants.threshold_image( t1, 0.01, 1 )
-t1 = ants.rank_intensity( t1, mask=bxt, get_mask=True )
-# t1 = ants.add_noise_to_image( t1, 'additivegaussian', (0,0.5) ) * bxt # should fail
-# ants.plot( t1, nslices=21, ncol=7, crop=True )
-templateb = ants.image_read( antspyt1w.get_data( "S_template3_brain", target_extension='.nii.gz' ) )
-templateb = ants.crop_image( templateb ).resample_image( [1,1,1] )
-templateb = antspynet.pad_image_by_factor( templateb, 8 )
-templatebsmall = ants.resample_image( templateb, [2,2,2] )
-reg = ants.registration( templatebsmall, t1, 'Similarity', verbose=False )
-#############################
-ilist = list()
-# refimg=ants.resample_image( templateb, ants.get_spacing( t1 ) )
-refimg=templateb
-ilist.append( [refimg] )
-print("simulate")
-nsim = 16
-uu = antspynet.randomly_transform_image_data( refimg, ilist,
-    number_of_simulations = nsim,
-    transform_type='scaleShear', sd_affine=0.075 )
-print("simulate done")
 
-fwdaffgd = ants.read_transform( reg['fwdtransforms'][0])
-invaffgd = ants.invert_ants_transform( fwdaffgd )
-meanpred = 0.0
-minpred = np.math.inf
-
-def get_grade( score, probs ):
-    grade='f'
-    if score >= 2.25:
-        grade='a'
-    elif score >= 1.5:
-        grade='b'
-    elif score >= 0.75:
-        grade='c'
-    probgradeindex = np.argmax( probs )
-    probgrade = ['a','b','c','f'][probgradeindex]
-    return [grade, probgrade]
-
-meanpred=0.0
-gradelistNum = []
-gradelistProb = []
-for k in range( nsim ):
-    print( "k: " + str(k) )
-    simtx = uu['simulated_transforms'][k]
-    cmptx = ants.compose_ants_transforms( [simtx,fwdaffgd] ) # good
-    subjectsim = ants.apply_ants_transform_to_image( cmptx, t1, refimg, interpolation='linear' )
-    subjectsim = ants.add_noise_to_image( subjectsim, 'additivegaussian', (0,0.01) )
-    xarr = subjectsim.numpy()
-    newshape = list( xarr.shape )
-    newshape = [1] + newshape + [1]
-    xarr = np.reshape(  xarr, newshape  )
-    preds = mdl.predict( xarr )
-    predsnum = tf.matmul(  preds, scoreNums )
-    locgrades = get_grade( predsnum, preds )
-    print(  locgrades )
-    if float(predsnum.numpy()) < minpred:
-        minpred = float(predsnum.numpy())
-    meanpred = meanpred + predsnum/nsim
-    gradelistNum.append( locgrades[0] )
-    gradelistProb.append( locgrades[1] )
-
-print( most_frequent(gradelistNum) + " & " + most_frequent(gradelistProb))
-
-mydf = pd.DataFrame( {
-    "Num": gradelistNum,
-    "Prob": gradelistProb
-})
-
-print( mydf.Num.value_counts() )
-print( mydf.Prob.value_counts() )
+# mygrade = antspyt1w.resnet_grader( x )
