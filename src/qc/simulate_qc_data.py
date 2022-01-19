@@ -57,11 +57,11 @@ if grade == 'b':
 if grade == 'c':
     nsim=7
 if grade == 'f':
-    nsim=42 
+    nsim=42
 data={"id": [locid],  "grade":[grade],  "originalT1":[t1fn], "nsim": [nsim] }
 outpd=pd.DataFrame( data )
 outpd.to_csv( outpre + ".csv" )
-# now we can do the processing we need ....   
+# now we can do the processing we need ....
 import ants
 import antspynet
 import antspymm
@@ -109,4 +109,3 @@ for k in range( nsim ):
     ants.image_write( subjectsim, outpre + str(k) + ".nii.gz"  )
 
 print("done")
-
