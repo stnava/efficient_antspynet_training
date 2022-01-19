@@ -55,7 +55,6 @@ t1fn='/Users/stnava/.antspyt1w/28364-00000000-T1w-00.nii.gz'
 t1fn='sub-056_T1wH_v1SR.nii.gz'; dobxt=False
 t1fn='Mindboggle_MMRR-21-5_T1wSRHierarchical_SR.nii.gz'
 t1fn='sub-094-SRHIERbrain_n4_dnz.nii.gz'
-t1fn='PPMI-107099-20210914-T1wHierarchical-I1498901-SR.nii.gz'; dobxt=False
 t1fn='/Users/stnava/.antspyt1w/28405-00000000-T1w-02.nii.gz'; dobxt=True
 t1fn='/Users/stnava/.antspyt1w/28497-00000000-T1w-04.nii.gz'
 t1fn='/Users/stnava/.antspyt1w/sub-094_T1w_n3.nii.gz'
@@ -63,8 +62,9 @@ t1fn='/Users/stnava/.antspyt1w/28364-00000000-T1w-00nnlow.nii.gz'
 t1fn='/Users/stnava/.antspyt1w/28364-00000000-T1w-00srup.nii.gz'
 t1fn='/Users/stnava/.antspyt1w/28386-00000000-T1w-01.nii.gz'
 t1fn='/Users/stnava/.antspyt1w/28575-00000000-T1w-07.nii.gz'
-# t1fn='Landman_1399_20110819_366886505_301_WIP_T1_3D_TFE_iso0_70_SENSE_T1_3D_TFE_iso0_70.nii.gz'; dobxt=True
-# t1fn='/Users/stnava/Downloads/eximg.nii.gz' ; dobxt=False
+t1fn='Landman_1399_20110819_366886505_301_WIP_T1_3D_TFE_iso0_70_SENSE_T1_3D_TFE_iso0_70.nii.gz'; dobxt=True
+t1fn='/Users/stnava/Downloads/eximg.nii.gz' ; dobxt=False
+t1fn='PPMI-107099-20210914-T1wHierarchical-I1498901-SR.nii.gz'; dobxt=False
 x=ants.image_read( t1fn )
 print( t1fn )
 if dobxt:
@@ -118,23 +118,24 @@ for k in range( nsim ):
     print( predsnum )
 
 grade='f'
-roundpred = np.round( float(meanpred ))
-if roundpred >= 2.5:
+meanpred=float(meanpred )
+if meanpred >= 2.25:
     grade='a'
-elif roundpred >= 1.5:
+elif meanpred >= 1.5:
     grade='b'
-elif roundpred >= 0.5:
+elif meanpred >= 0.75:
     grade='c'
 
 print( grade )
 
 
+# quantile-based grading
 grademin='f'
-if minpred >= 2.5:
+if minpred >= 2.25:
     grademin='a'
 elif minpred >= 1.5:
     grademin='b'
-elif minpred >= 0.5:
+elif minpred >= 0.75:
     grademin='c'
 
 print( grademin + " " + str( float(meanpred ) ) )
