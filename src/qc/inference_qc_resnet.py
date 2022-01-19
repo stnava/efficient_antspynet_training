@@ -55,12 +55,15 @@ t1fn='/Users/stnava/.antspyt1w/ADNI-024_S_1393-20080407-T1w-000.nii.gz'
 x=ants.image_read( t1fn )
 print( t1fn )
 if dobxt:
-    bxt=antspyt1w.brain_extraction( ants.rank_intensity(  x ) )
+    # otsumask=ants.threshold_image( x, "Otsu", 1).iMath("MD",2)
+    # bxt=antspyt1w.brain_extraction( ants.iMath( x, "TruncateIntensity", 0.01, 0.95) ) # * ants.iMath( otsumask, "FillHoles" ) )
+    bxt=antspynet.brain_extraction( ants.iMath( x, "TruncateIntensity", 0.01, 0.95) , "t1" ).threshold_image(0.5, 1)
     t1 = ants.iMath( x * bxt,  "Normalize" )
     ants.plot( t1, nslices=21, ncol=7, crop=True )
 else:
     t1 = ants.iMath( x,  "Normalize" )
-t1 = ants.rank_intensity( t1, get_mask=True )
+    bxt = ants.threshold_image( t1, 0.01, 1 )
+t1 = ants.rank_intensity( t1, mask=bxt, get_mask=False )
 templateb = ants.image_read( antspyt1w.get_data( "S_template3_brain", target_extension='.nii.gz' ) )
 templateb = ants.crop_image( templateb ).resample_image( [1,1,1] )
 templateb = antspynet.pad_image_by_factor( templateb, 8 )

@@ -91,7 +91,7 @@ mydf=None
 
 # load the testing data
 with tf.device('/CPU:0'):
-    temp=batch_generator( 128, train=False )
+    temp=batch_generator( 384, train=False )
     testX = temp[0]
     testY = temp[1]
     testYnum = temp[2]
